@@ -42,7 +42,8 @@ const isSuccsessfullyPosts = async (data, response) => {
         id: id,
         title: title,
         title_crop: title_crop,
-        body: body
+        body: body,
+        comments: []
       }
       posts.push(obj)
     })
@@ -50,6 +51,16 @@ const isSuccsessfullyPosts = async (data, response) => {
   } else {
     response.send(`Ошибка: ${data.status}`)
   }
+}
+
+const findUsersPosts = (users, userId) => {
+  let postsId = []
+  let filtredDataUsers = users.filter(user => user.id === userId)
+  filtredDataUsers.forEach(filtredUser => {
+    const id = filtredUser.posts.map(post => post.id)
+    postsId = [...id]
+  })
+  return postsId
 }
 
 class Controller {
@@ -68,6 +79,20 @@ class Controller {
           }
         })
       })
+      const idPosts = findUsersPosts(dataUsers, 2)
+      for(let idPost of idPosts) {
+        let resultComments = await fetch(`https://jsonplaceholder.typicode.com/posts/${idPost}/comments`)
+        let parsedResultComments = await resultComments.json()
+        dataUsers.forEach(user => {
+          user.posts.forEach(post => {
+            if(post.id == idPost) {
+              parsedResultComments.forEach(comment => {
+                post.comments.push(comment)
+              })
+            }
+          })
+        })
+      }
       const data = JSON.stringify(dataUsers)
       writeFile('src/data/data.json', data, (err) => {
         if(err) {
